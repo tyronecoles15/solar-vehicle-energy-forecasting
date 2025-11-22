@@ -1,0 +1,20 @@
+{
+    "collection_date": "2025-11-22 10:53:24",
+    "location": "Johannesburg, South Africa",
+    "latitude": -26.2041,
+    "longitude": 28.0473,
+    "start_date": "20140101",
+    "end_date": "20231231",
+    "total_records": 3652,
+    "parameters": [
+        "GHI",
+        "DNI",
+        "DHI",
+        "Temperature",
+        "Relative_Humidity",
+        "Cloud_Coverage",
+        "Wind_Speed"
+    ],
+    "source": "NASA POWER Project",
+    "api_url": "https://power.larc.nasa.gov/api/temporal/daily/point"
+}
