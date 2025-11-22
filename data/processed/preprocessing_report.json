@@ -1,0 +1,71 @@
+{
+    "original_records": 3652,
+    "original_columns": [
+        "date",
+        "GHI",
+        "DNI",
+        "DHI",
+        "Temperature",
+        "Relative_Humidity",
+        "Cloud_Coverage",
+        "Wind_Speed"
+    ],
+    "missing_values_before": {
+        "date": 0,
+        "GHI": 0,
+        "DNI": 0,
+        "DHI": 0,
+        "Temperature": 0,
+        "Relative_Humidity": 0,
+        "Cloud_Coverage": 0,
+        "Wind_Speed": 0
+    },
+    "outliers_detected": {
+        "GHI": 0,
+        "DNI": 0,
+        "DHI": 3,
+        "Temperature": 2,
+        "Relative_Humidity": 0,
+        "Cloud_Coverage": 0,
+        "Wind_Speed": 39
+    },
+    "records_after_cleaning": 3652,
+    "engineered_features": [
+        "day",
+        "month",
+        "day_of_year",
+        "season",
+        "GHI_lag1",
+        "DNI_lag1",
+        "DHI_lag1",
+        "GHI_ma3",
+        "GHI_ma7",
+        "DNI_ma3",
+        "DNI_ma7"
+    ],
+    "records_after_feature_engineering": 3651,
+    "normalized_columns": [
+        "GHI",
+        "DNI",
+        "DHI",
+        "Temperature",
+        "Relative_Humidity",
+        "Cloud_Coverage",
+        "Wind_Speed",
+        "GHI_lag1",
+        "DNI_lag1",
+        "DHI_lag1",
+        "GHI_ma3",
+        "GHI_ma7",
+        "DNI_ma3",
+        "DNI_ma7"
+    ],
+    "data_split": {
+        "train_records": 2555,
+        "val_records": 548,
+        "test_records": 548,
+        "train_dates": "2014-01-02 00:00:00 to 2020-12-30 00:00:00",
+        "val_dates": "2020-12-31 00:00:00 to 2022-07-01 00:00:00",
+        "test_dates": "2022-07-02 00:00:00 to 2023-12-31 00:00:00"
+    }
+}
