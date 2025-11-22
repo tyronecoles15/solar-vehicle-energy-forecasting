@@ -35,7 +35,6 @@ class SolarDataPreprocessor:
         self.input_file = input_file
         self.output_dir = output_dir
         self.df = None
-        self.df_original = None 
         self.scaler = MinMaxScaler()
         self.preprocessing_report = {}
         
