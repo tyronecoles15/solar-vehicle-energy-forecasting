@@ -44,7 +44,6 @@ class NASAPowerDataCollector:
             Path to save the collected data
         """
         
-        # Parameters to collect based on methodology document
         parameters = [
             'ALLSKY_SFC_SW_DWN',      # GHI - Global Horizontal Irradiance
             'ALLSKY_SFC_SW_DNI',       # DNI - Direct Normal Irradiance
@@ -55,7 +54,6 @@ class NASAPowerDataCollector:
             'WS2M'                     # Wind Speed at 2 meters
         ]
         
-        # Build API request URL
         params_str = ','.join(parameters)
         url = f"{self.base_url}?parameters={params_str}&community=RE&longitude={self.longitude}&latitude={self.latitude}&start={start_date}&end={end_date}&format=JSON"
         
@@ -65,24 +63,18 @@ class NASAPowerDataCollector:
         print(f"Parameters: {len(parameters)} variables")
         
         try:
-            # Make API request
             response = requests.get(url, timeout=120)
             response.raise_for_status()
             
-            # Parse JSON response
             data = response.json()
             
-            # Extract parameters data
             parameters_data = data['properties']['parameter']
             
-            # Convert to DataFrame
             df = pd.DataFrame(parameters_data)
-            
-            # Reset index to make date a column
+         
             df = df.reset_index()
             df.rename(columns={'index': 'date'}, inplace=True)
-            
-            # Convert date format from YYYYMMDD to datetime
+      
             df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
             
             # Rename columns to more readable names
@@ -97,10 +89,8 @@ class NASAPowerDataCollector:
             }
             df.rename(columns=column_mapping, inplace=True)
             
-            # Sort by date
             df = df.sort_values('date').reset_index(drop=True)
             
-            # Display basic info
             print(f"\n✓ Data collected successfully!")
             print(f"Total records: {len(df)}")
             print(f"Date range: {df['date'].min()} to {df['date'].max()}")
@@ -112,7 +102,6 @@ class NASAPowerDataCollector:
             df.to_csv(output_file, index=False)
             print(f"\n✓ Data saved to: {output_file}")
             
-            # Save metadata
             metadata = {
                 'collection_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'location': 'Johannesburg, South Africa',
@@ -168,22 +157,16 @@ def main():
     """
     Main execution function
     """
-    # Initialize collector
     collector = NASAPowerDataCollector()
     
-    # Define date range (10 years as per methodology)
-    # Using 2014-2023 to have complete years
     start_date = '20140101'
     end_date = '20231231'
-    
-    # Output file path
+ 
     output_file = 'data/raw/nasa_power_johannesburg_raw.csv'
-    
-    # Collect data
+
     df = collector.collect_data(start_date, end_date, output_file)
     
     if df is not None:
-        # Generate summary
         collector.get_data_summary(df)
         
         print("\n" + "="*60)
