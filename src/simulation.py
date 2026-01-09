@@ -11,6 +11,7 @@ import seaborn as sns
 import json
 import joblib
 from datetime import datetime, timedelta
+import sys
 
 
 class SolarVehicle:
@@ -71,8 +72,34 @@ class SolarEnergySimulation:
         test_data_path : str
             Path to test data CSV
         """
-        # Load model and data
-        self.model = joblib.load(model_path)
+    def __init__(self, model_path, feature_cols_path, test_data_path):
+        """
+        Initialize simulation
+        
+        Parameters:
+        -----------
+        model_path : str
+            Path to trained model
+        feature_cols_path : str
+            Path to feature columns JSON
+        test_data_path : str
+            Path to test data CSV
+        """
+        # Load model and data - detect model type from file extension
+        if model_path.endswith('.h5'):
+            # ANN model (TensorFlow/Keras)
+            from tensorflow import keras
+            self.model = keras.models.load_model(model_path)
+            self.model_type = 'ann'
+        elif model_path.endswith('.txt'):
+            # LightGBM model
+            import lightgbm as lgb
+            self.model = lgb.Booster(model_file=model_path)
+            self.model_type = 'lightgbm'
+        else:
+            # Scikit-learn model (Linear Regression, Random Forest)
+            self.model = joblib.load(model_path)
+            self.model_type = 'sklearn'
         
         with open(feature_cols_path, 'r') as f:
             self.feature_cols = json.load(f)
@@ -102,7 +129,17 @@ class SolarEnergySimulation:
         float : Predicted GHI in kWh/m²/day
         """
         features = day_data[self.feature_cols].values.reshape(1, -1)
-        prediction = self.model.predict(features)[0]
+        
+        if self.model_type == 'ann':
+            # ANN model returns numpy array, flatten it
+            prediction = self.model.predict(features, verbose=0).flatten()[0]
+        elif self.model_type == 'lightgbm':
+            # LightGBM model
+            prediction = self.model.predict(features)[0]
+        else:
+            # Scikit-learn model
+            prediction = self.model.predict(features)[0]
+        
         return prediction
     
     def calculate_available_energy(self, ghi_prediction):
@@ -523,15 +560,31 @@ class SolarEnergySimulation:
         print(f"✓ Saved: simulation_summary.txt")
 
 
-def main():
+def main(model_type='random_forest'):
     """Main execution"""
     print("\n" + "="*70)
     print(" "*10 + "SOLAR VEHICLE ENERGY MANAGEMENT SIMULATION")
     print("="*70 + "\n")
     
-    # Initialize simulation with Random Forest model (best performer)
+    # Model selection
+    model_paths = {
+        'linear_regression': 'models/linear_regression_model.pkl',
+        'random_forest': 'models/random_forest_model.pkl',
+        'lightgbm': 'models/lightgbm_quantile_50.txt',  # Use median quantile
+        'ann': 'models/ann_model.h5'
+    }
+    
+    if model_type not in model_paths:
+        print(f"Error: Unknown model type '{model_type}'")
+        print(f"Available models: {list(model_paths.keys())}")
+        return
+    
+    model_path = model_paths[model_type]
+    print(f"Using model: {model_type} ({model_path})")
+    
+    # Initialize simulation
     simulation = SolarEnergySimulation(
-        model_path='models/random_forest_model.pkl',
+        model_path=model_path,
         feature_cols_path='models/feature_columns.json',
         test_data_path='data/processed/test_data.csv'
     )
@@ -562,4 +615,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Parse command line arguments
+    model_type = 'random_forest'  # default
+    if len(sys.argv) > 1:
+        model_type = sys.argv[1]
+    
+    main(model_type)
