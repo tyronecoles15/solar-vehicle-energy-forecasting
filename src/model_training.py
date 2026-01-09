@@ -569,14 +569,12 @@ class SolarEnergyForecaster:
             'dates': self.test_df['date'].tolist()
         }
 
-        # Include lightgbm predictions if present
+        # Include lightgbm predictions 
         if lgb_pred is not None:
             self.results['test_predictions']['lgb_median_pred'] = lgb_pred.tolist()
         if len(lgb_quantile_preds) > 0:
-            # Store all quantile preds under a single key (stringify quantile keys)
             self.results['test_predictions']['lgb_quantile_preds'] = {str(k): v.tolist() for k, v in lgb_quantile_preds.items()}
-        
-        # Include ANN predictions if present
+  
         if ann_pred is not None:
             self.results['test_predictions']['ann_pred'] = ann_pred.tolist()
 
@@ -628,7 +626,7 @@ class SolarEnergyForecaster:
         rf_pred = np.array(self.results['test_predictions']['rf_pred'])
         dates = pd.to_datetime(self.results['test_predictions']['dates'])
 
-        # Prepare LightGBM preds if present
+        # Prepare LightGBM preds 
         lgb_median = None
         lgb_lower = None
         lgb_upper = None
@@ -641,7 +639,7 @@ class SolarEnergyForecaster:
                 lgb_lower = np.array(q_preds['0.1'])
                 lgb_upper = np.array(q_preds['0.9'])
 
-        # Prepare ANN preds if present
+        # Prepare ANN preds 
         ann_pred = None
         if 'ann_pred' in self.results['test_predictions']:
             ann_pred = np.array(self.results['test_predictions']['ann_pred'])
@@ -700,7 +698,7 @@ class SolarEnergyForecaster:
         axes[0, 1].legend()
         axes[0, 1].grid(True, alpha=0.3)
 
-        # LightGBM scatter (if available)
+        # LightGBM scatter 
         if lgb_median is not None:
             axes[1, 0].scatter(y_true, lgb_median, alpha=0.5, s=20, color='#8e44ad')
             axes[1, 0].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
@@ -715,7 +713,7 @@ class SolarEnergyForecaster:
                            ha='center', va='center', transform=axes[1, 0].transAxes, fontsize=12)
             axes[1, 0].set_title('LightGBM (median)')
 
-        # ANN scatter (if available)
+        # ANN scatter 
         if ann_pred is not None:
             axes[1, 1].scatter(y_true, ann_pred, alpha=0.5, s=20, color='#e67e22')
             axes[1, 1].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
@@ -738,7 +736,6 @@ class SolarEnergyForecaster:
         # Figure 3: Model Comparison
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-        # Build models list dynamically to include LightGBM if available
         models = ['Linear Regression', 'Random Forest', 'Persistence', 'Seasonal Naive']
         mae_list = [
             self.results['linear_regression']['test_metrics']['MAE'],
@@ -823,10 +820,9 @@ class SolarEnergyForecaster:
         print("✓ Saved: model_comparison.png")
         plt.close()
 
-        # Figure 3.5: Training Time Comparison
+        # Figure: Training Time Comparison
         fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-        
-        # Collect training times for available models
+       
         training_times = []
         time_labels = []
         
@@ -852,8 +848,7 @@ class SolarEnergyForecaster:
             ax.set_ylabel('Training Time (seconds)')
             ax.set_xlabel('Model')
             ax.grid(True, alpha=0.3, axis='y')
-            
-            # Add value labels on bars
+           
             for bar, time in zip(bars, training_times):
                 height = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width()/2., height + max(training_times) * 0.01,
@@ -915,19 +910,16 @@ class SolarEnergyForecaster:
         joblib.dump(self.rf_model, f"{self.models_dir}/random_forest_model.pkl")
         print("✓ Saved: random_forest_model.pkl")
 
-        # Save LightGBM quantile models (one file per quantile)
         for q, model in self.lgb_models.items():
             model_file = f"{self.models_dir}/lightgbm_quantile_{int(q*100)}.txt"
             model.save_model(model_file)
             print(f"✓ Saved: {os.path.basename(model_file)}")
-        
-        # Save ANN model
+    
         if self.ann_model is not None:
             ann_model_file = f"{self.models_dir}/ann_model.h5"
             self.ann_model.save(ann_model_file)
             print(f"✓ Saved: {os.path.basename(ann_model_file)}")
-        
-        # Save feature columns
+      
         with open(f"{self.models_dir}/feature_columns.json", 'w') as f:
             json.dump(self.feature_cols, f, indent=4)
         print("✓ Saved: feature_columns.json")
@@ -938,7 +930,6 @@ class SolarEnergyForecaster:
         print("SAVING RESULTS")
         print("="*60)
         
-        # Add timestamp
         self.results['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.results['data_info'] = {
             'train_records': len(self.train_df),
@@ -1020,8 +1011,7 @@ class SolarEnergyForecaster:
             f.write("\n" + "="*70 + "\n")
             f.write("CONCLUSION\n")
             f.write("="*70 + "\n")
-            
-            # Get all available models and their metrics
+        
             available_models = {}
             if 'linear_regression' in self.results:
                 available_models['Linear Regression'] = self.results['linear_regression']['test_metrics']
@@ -1038,8 +1028,7 @@ class SolarEnergyForecaster:
                 best_rmse = available_models[best_model]['RMSE']
                 
                 f.write(f"The best performing model is {best_model} with RMSE = {best_rmse:.4f} kWh/m²/day.\n")
-                
-                # Compare with Linear Regression if available
+              
                 if 'Linear Regression' in available_models and len(available_models) > 1:
                     lr_rmse = available_models['Linear Regression']['RMSE']
                     improvement = ((lr_rmse - best_rmse) / lr_rmse * 100)
@@ -1059,32 +1048,17 @@ def main():
     print(" "*10 + "SOLAR ENERGY FORECASTING - MODEL TRAINING")
     print("="*70 + "\n")
     
-    # Initialize forecaster
     forecaster = SolarEnergyForecaster()
-    
-    # Load data
     forecaster.load_data()
     
-    # Train models
     forecaster.train_linear_regression(use_rfe=True, cv_folds=5)
     forecaster.train_random_forest(n_estimators=100, max_depth=10, cv_folds=5)
-
-    # Train LightGBM quantile models
     forecaster.train_lightgbm_quantile()
-    
-    # Train ANN model
     forecaster.train_ann(hidden_layers=[64, 32], learning_rate=0.001, epochs=100, batch_size=32, patience=10)
     
-    # Evaluate on test set
     forecaster.evaluate_on_test_set()
-    
-    # Create benchmarks
     forecaster.create_benchmark_models()
-    
-    # Generate visualizations
     forecaster.visualize_results()
-    
-    # Save everything
     forecaster.save_models()
     forecaster.save_results()
 
@@ -1106,7 +1080,6 @@ def main():
     print("    • results/figures/model_comparison.png")
     print("    • results/figures/training_times.png")
     print("    • results/figures/feature_importance.png")
-    print("\nNext Step: Run SimPy simulation")
     print("="*70 + "\n")
 
 

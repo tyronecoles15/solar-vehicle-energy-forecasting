@@ -384,10 +384,6 @@ def main():
     print("  • data/processed/preprocessing_report.json")
     print("  • data/processed/data_visualization.png")
     print("  • data/processed/correlation_matrix.png")
-    print("\nNext Steps:")
-    print("  1. Review preprocessing report and visualizations")
-    print("  2. Proceed to model development (Linear Regression & Random Forest)")
-    print("  3. Commit changes to Git")
     print("="*70 + "\n")
 
 

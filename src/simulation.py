@@ -39,15 +39,13 @@ class SolarVehicle:
         self.charging_efficiency = charging_efficiency
         self.daily_consumption = daily_consumption
         
-        # State variables
-        self.battery_level = battery_capacity * 0.8  # Start at 80%
+        self.battery_level = battery_capacity * 0.8
         self.total_energy_charged = 0
         self.total_energy_consumed = 0
         self.days_operational = 0
         self.energy_shortfalls = 0
         self.total_shortfall_amount = 0
         
-        # History tracking
         self.battery_history = []
         self.charging_history = []
         self.consumption_history = []
@@ -85,19 +83,15 @@ class SolarEnergySimulation:
         test_data_path : str
             Path to test data CSV
         """
-        # Load model and data - detect model type from file extension
         if model_path.endswith('.h5'):
-            # ANN model (TensorFlow/Keras)
             from tensorflow import keras
             self.model = keras.models.load_model(model_path)
             self.model_type = 'ann'
         elif model_path.endswith('.txt'):
-            # LightGBM model
             import lightgbm as lgb
             self.model = lgb.Booster(model_file=model_path)
             self.model_type = 'lightgbm'
         else:
-            # Scikit-learn model (Linear Regression, Random Forest)
             self.model = joblib.load(model_path)
             self.model_type = 'sklearn'
         
@@ -187,35 +181,28 @@ class SolarEnergySimulation:
             predicted_energy = self.calculate_available_energy(predicted_ghi)
             actual_energy = self.calculate_available_energy(actual_ghi)
             
-            # Daily consumption (with some variability)
             daily_consumption = self.daily_consumption_base * np.random.uniform(0.9, 1.1)
             
-            # Morning: Consume energy
             vehicle.battery_level -= daily_consumption
             vehicle.total_energy_consumed += daily_consumption
             
-            # Check for energy shortfall
             if vehicle.battery_level < 0:
                 shortfall = abs(vehicle.battery_level)
                 vehicle.energy_shortfalls += 1
                 vehicle.total_shortfall_amount += shortfall
-                vehicle.battery_level = 0  # Can't go negative
+                vehicle.battery_level = 0
             
-            # Daytime: Charge with actual solar energy
             charging_amount = min(actual_energy, 
                                 vehicle.battery_capacity - vehicle.battery_level)
             vehicle.battery_level += charging_amount
             vehicle.total_energy_charged += charging_amount
             
-            # Cap at battery capacity
             vehicle.battery_level = min(vehicle.battery_level, vehicle.battery_capacity)
             
-            # Track history
             vehicle.battery_history.append(vehicle.battery_level)
             vehicle.charging_history.append(charging_amount)
             vehicle.consumption_history.append(daily_consumption)
             
-            # Track prediction error
             prediction_error = abs(predicted_energy - actual_energy)
             vehicle.prediction_error_history.append(prediction_error)
             
@@ -246,26 +233,17 @@ class SolarEnergySimulation:
         print(f"Running Scenario: {scenario_name}")
         print(f"{'─'*60}")
         
-        # Select data for this scenario
         scenario_data = self.test_df.iloc[start_day:start_day + num_days].copy()
         
-        # Get predictions (these are normalized, need to denormalize)
         predictions = []
         for idx, row in scenario_data.iterrows():
             pred = self.predict_solar_energy(row)
             predictions.append(pred)
         
-        # For actuals, use the normalized GHI from test data
-        # Since predictions are normalized, we need normalized actuals for fair comparison
         actuals = scenario_data['GHI'].values
         
-        # Note: Both predictions and actuals are now in same scale (normalized)
-        # The calculate_available_energy will handle the conversion
-        
-        # Create simulation environment
         env = simpy.Environment()
         
-        # Create vehicle
         vehicle = SolarVehicle(
             env=env,
             battery_capacity=self.battery_capacity,
@@ -273,10 +251,7 @@ class SolarEnergySimulation:
             daily_consumption=self.daily_consumption_base
         )
         
-        # Start vehicle process
         env.process(self.vehicle_process(env, vehicle, predictions, actuals, scenario_name))
-        
-        # Run simulation
         env.run()
         
         # Calculate metrics
@@ -610,13 +585,11 @@ def main(model_type='random_forest'):
     print("    • results/figures/simulation_energy_flow.png")
     print("    • results/figures/simulation_scenario_comparison.png")
     print("    • results/figures/simulation_cumulative_energy.png")
-    print("\nAll files ready for your 2-3 page report!")
     print("="*70 + "\n")
 
 
 if __name__ == "__main__":
-    # Parse command line arguments
-    model_type = 'random_forest'  # default
+    model_type = 'random_forest'
     if len(sys.argv) > 1:
         model_type = sys.argv[1]
     
