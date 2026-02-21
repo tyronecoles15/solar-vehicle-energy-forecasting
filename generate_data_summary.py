@@ -51,7 +51,7 @@ print(df_summary.to_string(index=False))
 # Export to CSV for report inclusion
 df_summary.to_csv('results/data_summary_table.csv', index=False)
 
-# Also create a markdown-formatted version
+# markdown-formatted version
 print("\n\n" + "="*100)
 print("MARKDOWN FORMAT FOR REPORT")
 print("="*100)
@@ -60,7 +60,7 @@ print("|----------|------|------|---------|---------|---------|")
 for _, row in df_summary.iterrows():
     print(f"| {row['Variable']} | {row['Unit']} | {row['Mean']:.4f} | {row['Minimum']:.4f} | {row['Maximum']:.4f} | {row['Std Dev']:.4f} |")
 
-# Also create LaTeX format for report
+
 print("\n\n" + "="*100)
 print("LATEX FORMAT FOR REPORT")
 print("="*100)
