@@ -15,9 +15,9 @@ primary_variables = ['GHI', 'DNI', 'DHI', 'Temperature', 'Relative_Humidity', 'C
 
 # Define units for each variable
 units = {
-    'GHI': 'kWh/m²/day',
-    'DNI': 'kWh/m²/day',
-    'DHI': 'kWh/m²/day',
+    'GHI': 'MJ/m²/day',
+    'DNI': 'MJ/m²/day',
+    'DHI': 'MJ/m²/day',
     'Temperature': '°C',
     'Relative_Humidity': '%',
     'Cloud_Coverage': 'Oktas',

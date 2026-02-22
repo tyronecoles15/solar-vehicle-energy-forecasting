@@ -499,8 +499,8 @@ class SolarEnergyForecaster:
         """Pretty print metrics"""
         print(f"\n   {dataset_name} Metrics:")
         print(f"   {'─'*40}")
-        print(f"   MAE:   {metrics['MAE']:.4f} kWh/m²/day")
-        print(f"   RMSE:  {metrics['RMSE']:.4f} kWh/m²/day")
+        print(f"   MAE:   {metrics['MAE']:.4f} MJ/m²/day")
+        print(f"   RMSE:  {metrics['RMSE']:.4f} MJ/m²/day")
         print(f"   R²:    {metrics['R2']:.4f}")
         print(f"   MAPE:  {metrics['MAPE']:.2f}%")
         
@@ -651,11 +651,21 @@ class SolarEnergyForecaster:
         axes[0].plot(dates, y_true, label='Actual', color='black', linewidth=2, alpha=0.7)
         axes[0].plot(dates, lr_pred, label='Linear Regression', color='blue', linewidth=1.5, alpha=0.8)
         axes[0].set_title('Linear Regression: Predicted vs Actual GHI', fontsize=14, fontweight='bold')
-        axes[0].set_ylabel('GHI (kWh/m²/day)')
-        axes[0].legend()
+        axes[0].set_ylabel('GHI (MJ/m²/day)')
+        axes[0].legend(loc='upper right')
         axes[0].grid(True, alpha=0.3)
 
         # Random Forest (overlay LightGBM median, ANN, and quantile band if available)
+        # Calculate errors and highlight spikes for Random Forest
+        rf_errors = np.abs(y_true - rf_pred)
+        error_threshold = np.mean(rf_errors) + 1.5 * np.std(rf_errors)
+        error_spikes = rf_errors > error_threshold
+        
+        # Highlight error spike regions with vertical bands
+        for i in range(len(dates)):
+            if error_spikes[i]:
+                axes[1].axvspan(dates[i], dates[i], alpha=0.15, color='red', linewidth=0)
+        
         axes[1].plot(dates, y_true, label='Actual', color='black', linewidth=2, alpha=0.7)
         axes[1].plot(dates, rf_pred, label='Random Forest', color='green', linewidth=1.5, alpha=0.8)
         if lgb_median is not None:
@@ -664,10 +674,16 @@ class SolarEnergyForecaster:
             axes[1].plot(dates, ann_pred, label='ANN', color='#e67e22', linewidth=1.5, alpha=0.9)
         if lgb_lower is not None and lgb_upper is not None:
             axes[1].fill_between(dates, lgb_lower, lgb_upper, color='#8e44ad', alpha=0.15, label='LightGBM 0.1-0.9 quantile')
-        axes[1].set_title('Random Forest, LightGBM & ANN: Predicted vs Actual GHI', fontsize=14, fontweight='bold')
+        
+        # Add custom legend entry for error spikes
+        from matplotlib.patches import Patch
+        error_patch = Patch(facecolor='red', alpha=0.15, label=f'Error Spikes (>{error_threshold:.3f})')
+        handles, labels = axes[1].get_legend_handles_labels()
+        axes[1].legend(handles + [error_patch], labels + [error_patch.get_label()], loc='upper right')
+        
+        axes[1].set_title('Random Forest, LightGBM & ANN: Predicted vs Actual GHI (with Error Spikes)', fontsize=14, fontweight='bold')
         axes[1].set_xlabel('Date')
-        axes[1].set_ylabel('GHI (kWh/m²/day)')
-        axes[1].legend()
+        axes[1].set_ylabel('GHI (MJ/m²/day)')
         axes[1].grid(True, alpha=0.3)
 
         plt.tight_layout()
@@ -682,8 +698,8 @@ class SolarEnergyForecaster:
         axes[0, 0].scatter(y_true, lr_pred, alpha=0.5, s=20)
         axes[0, 0].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
                         'r--', lw=2, label='Perfect Prediction')
-        axes[0, 0].set_xlabel('Actual GHI (kWh/m²/day)')
-        axes[0, 0].set_ylabel('Predicted GHI (kWh/m²/day)')
+        axes[0, 0].set_xlabel('Actual GHI (MJ/m²/day)')
+        axes[0, 0].set_ylabel('Predicted GHI (MJ/m²/day)')
         axes[0, 0].set_title(f'Linear Regression\nR² = {self.results["linear_regression"]["test_metrics"]["R2"]:.4f}')
         axes[0, 0].legend()
         axes[0, 0].grid(True, alpha=0.3)
@@ -692,8 +708,8 @@ class SolarEnergyForecaster:
         axes[0, 1].scatter(y_true, rf_pred, alpha=0.5, s=20, color='green')
         axes[0, 1].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
                         'r--', lw=2, label='Perfect Prediction')
-        axes[0, 1].set_xlabel('Actual GHI (kWh/m²/day)')
-        axes[0, 1].set_ylabel('Predicted GHI (kWh/m²/day)')
+        axes[0, 1].set_xlabel('Actual GHI (MJ/m²/day)')
+        axes[0, 1].set_ylabel('Predicted GHI (MJ/m²/day)')
         axes[0, 1].set_title(f'Random Forest\nR² = {self.results["random_forest"]["test_metrics"]["R2"]:.4f}')
         axes[0, 1].legend()
         axes[0, 1].grid(True, alpha=0.3)
@@ -703,8 +719,8 @@ class SolarEnergyForecaster:
             axes[1, 0].scatter(y_true, lgb_median, alpha=0.5, s=20, color='#8e44ad')
             axes[1, 0].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
                             'r--', lw=2, label='Perfect Prediction')
-            axes[1, 0].set_xlabel('Actual GHI (kWh/m²/day)')
-            axes[1, 0].set_ylabel('Predicted GHI (kWh/m²/day)')
+            axes[1, 0].set_xlabel('Actual GHI (MJ/m²/day)')
+            axes[1, 0].set_ylabel('Predicted GHI (MJ/m²/day)')
             axes[1, 0].set_title(f'LightGBM (median)\nR² = {self.results["lightgbm_quantile"]["test_metrics_median"]["R2"]:.4f}')
             axes[1, 0].legend()
             axes[1, 0].grid(True, alpha=0.3)
@@ -718,8 +734,8 @@ class SolarEnergyForecaster:
             axes[1, 1].scatter(y_true, ann_pred, alpha=0.5, s=20, color='#e67e22')
             axes[1, 1].plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 
                             'r--', lw=2, label='Perfect Prediction')
-            axes[1, 1].set_xlabel('Actual GHI (kWh/m²/day)')
-            axes[1, 1].set_ylabel('Predicted GHI (kWh/m²/day)')
+            axes[1, 1].set_xlabel('Actual GHI (MJ/m²/day)')
+            axes[1, 1].set_ylabel('Predicted GHI (MJ/m²/day)')
             axes[1, 1].set_title(f'ANN\nR² = {self.results["ann"]["test_metrics"]["R2"]:.4f}')
             axes[1, 1].legend()
             axes[1, 1].grid(True, alpha=0.3)
@@ -786,7 +802,7 @@ class SolarEnergyForecaster:
         # MAE
         axes[0, 0].bar(models, metrics_data['MAE'], color=colors)
         axes[0, 0].set_title('Mean Absolute Error (MAE)')
-        axes[0, 0].set_ylabel('kWh/m²/day')
+        axes[0, 0].set_ylabel('MAE (MJ/m²/day)')
         axes[0, 0].axhline(y=0.12, color='r', linestyle='--', label='Target: 0.12')
         axes[0, 0].legend()
         axes[0, 0].tick_params(axis='x', rotation=45)
@@ -794,7 +810,7 @@ class SolarEnergyForecaster:
         # RMSE
         axes[0, 1].bar(models, metrics_data['RMSE'], color=colors)
         axes[0, 1].set_title('Root Mean Square Error (RMSE)')
-        axes[0, 1].set_ylabel('kWh/m²/day')
+        axes[0, 1].set_ylabel('RMSE (MJ/m²/day)')
         axes[0, 1].axhline(y=0.15, color='r', linestyle='--', label='Target: 0.15')
         axes[0, 1].legend()
         axes[0, 1].tick_params(axis='x', rotation=45)
@@ -884,12 +900,13 @@ class SolarEnergyForecaster:
                 lgb_upper = np.array(q_preds['0.9'])
 
                 plt.figure(figsize=(15, 5))
-                plt.plot(dates, y_true, label='Actual', color='black', linewidth=1.5, alpha=0.8)
-                plt.plot(dates, lgb_median, label='LightGBM (median)', color='#8e44ad', linewidth=1.5)
-                plt.fill_between(dates, lgb_lower, lgb_upper, color='#8e44ad', alpha=0.18, label='LightGBM 0.1-0.9 quantile')
+                plt.fill_between(dates, lgb_lower, lgb_upper, color='#e74c3c', alpha=0.25, label='LightGBM 0.1-0.9 quantile (80% prediction interval)')
+                plt.plot(dates, lgb_median, label='LightGBM (median)', color='#27ae60', linewidth=2.5)
+                plt.plot(dates, y_true, label='Actual', color='#f39c12', linewidth=2, alpha=0.9)
+
                 plt.title('LightGBM Probabilistic Forecast (0.1 - 0.9 Quantiles)', fontsize=14, fontweight='bold')
                 plt.xlabel('Date')
-                plt.ylabel('GHI (kWh/m²/day)')
+                plt.ylabel('GHI (MJ/m²/day)')
                 plt.legend()
                 plt.grid(True, alpha=0.3)
                 plt.tight_layout()
@@ -996,10 +1013,10 @@ class SolarEnergyForecaster:
                 else:
                     metrics = self.results[result_key]['test_metrics']
                 
-                f.write(f"MAE:  {metrics['MAE']:.4f} kWh/m²/day")
+                f.write(f"MAE:  {metrics['MAE']:.4f} MJ/m²/day")
                 f.write(f"  {'✓ PASS' if metrics['MAE'] < 0.12 else '✗ FAIL'} (Target: < 0.12)\n")
                 
-                f.write(f"RMSE: {metrics['RMSE']:.4f} kWh/m²/day")
+                f.write(f"RMSE: {metrics['RMSE']:.4f} MJ/m²/day")
                 f.write(f"  {'✓ PASS' if metrics['RMSE'] < 0.15 else '✗ FAIL'} (Target: < 0.15)\n")
                 
                 f.write(f"R²:   {metrics['R2']:.4f}")
@@ -1027,7 +1044,7 @@ class SolarEnergyForecaster:
                 best_model = min(available_models.keys(), key=lambda x: available_models[x]['RMSE'])
                 best_rmse = available_models[best_model]['RMSE']
                 
-                f.write(f"The best performing model is {best_model} with RMSE = {best_rmse:.4f} kWh/m²/day.\n")
+                f.write(f"The best performing model is {best_model} with RMSE = {best_rmse:.4f} MJ/m²/day.\n")
               
                 if 'Linear Regression' in available_models and len(available_models) > 1:
                     lr_rmse = available_models['Linear Regression']['RMSE']
